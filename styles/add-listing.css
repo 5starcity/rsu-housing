@@ -317,3 +317,46 @@
     font-weight: 500;
     text-align: center;
   }
+  /* Total move-in cost breakdown */
+.form-total {
+    margin-top: 8px;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid rgba(79, 110, 247, 0.2);
+    background: rgba(79, 110, 247, 0.05);
+  }
+  
+  .form-total__breakdown {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-bottom: 1px solid rgba(79, 110, 247, 0.15);
+  }
+  
+  .form-total__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    color: #94a3b8;
+  }
+  
+  .form-total__final {
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .form-total__final span {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #cbd5e1;
+  }
+  
+  .form-total__final strong {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #60a5fa;
+  }

@@ -1,7 +1,7 @@
 // app/add-listing/page.js
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { createListing } from "@/lib/firestoreListings";
@@ -12,15 +12,18 @@ const initialForm = {
   title: "",
   price: "",
   location: "",
-  distanceFromRSU: "",
+  address: "",
   type: "",
   beds: "1",
   baths: "1",
   furnishing: "",
   availability: "",
   paymentTerms: "",
+  cautionFee: "",
+  legalFee: "",
+  agencyFee: "",
+  serviceCharge: "",
   amenities: "",
-  additionalCosts: "",
   contact: "",
   description: "",
 };
@@ -45,6 +48,15 @@ export default function AddListingPage() {
   }, [user, userRole]);
 
   if (!user || userRole === "student") return null;
+
+  const totalMoveInCost = useMemo(() => {
+    const rent = Number(formData.price) || 0;
+    const caution = Number(formData.cautionFee) || 0;
+    const legal = Number(formData.legalFee) || 0;
+    const agency = Number(formData.agencyFee) || 0;
+    const service = Number(formData.serviceCharge) || 0;
+    return rent + caution + legal + agency + service;
+  }, [formData.price, formData.cautionFee, formData.legalFee, formData.agencyFee, formData.serviceCharge]);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -87,12 +99,17 @@ export default function AddListingPage() {
       newErrors.price = "Price must be greater than 0";
     }
     if (!formData.location.trim()) newErrors.location = "Location is required";
-    if (!formData.distanceFromRSU.trim()) newErrors.distanceFromRSU = "Distance from RSU is required";
+    if (!formData.address.trim()) newErrors.address = "Property address is required for map";
     if (!formData.type.trim()) newErrors.type = "Property type is required";
     if (!formData.furnishing.trim()) newErrors.furnishing = "Furnishing status is required";
     if (!formData.availability.trim()) newErrors.availability = "Availability is required";
     if (!formData.paymentTerms.trim()) newErrors.paymentTerms = "Payment terms are required";
-    if (imageFiles.length === 0) newErrors.images = "At least one image is required";
+
+    // Must have at least one image OR a video
+    if (imageFiles.length === 0 && !videoFile) {
+      newErrors.media = "Upload at least one photo or a video";
+    }
+
     if (!formData.contact.trim()) {
       newErrors.contact = "Contact number is required";
     } else if (formData.contact.trim().length < 11) {
@@ -115,8 +132,6 @@ export default function AddListingPage() {
     }
     setSaving(true);
     try {
-      // Upload images
-      setUploadProgress("Uploading images...");
       const imageUrls = [];
       for (let i = 0; i < imageFiles.length; i++) {
         setUploadProgress("Uploading image " + (i + 1) + " of " + imageFiles.length + "...");
@@ -124,7 +139,6 @@ export default function AddListingPage() {
         imageUrls.push(url);
       }
 
-      // Upload video if exists
       let videoUrl = null;
       if (videoFile) {
         setUploadProgress("Uploading video...");
@@ -133,23 +147,31 @@ export default function AddListingPage() {
 
       setUploadProgress("Saving listing...");
 
+      // Build Google Maps URL from address
+      const mapsUrl = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(formData.address + ", Port Harcourt, Nigeria");
+
       await createListing({
         title: formData.title.trim(),
         price: formData.price,
         location: formData.location.trim(),
-        distanceFromRSU: formData.distanceFromRSU.trim(),
+        address: formData.address.trim(),
+        mapsUrl,
         type: formData.type.trim(),
         beds: formData.beds,
         baths: formData.baths,
         furnishing: formData.furnishing,
         availability: formData.availability,
         paymentTerms: formData.paymentTerms.trim(),
+        cautionFee: formData.cautionFee ? Number(formData.cautionFee) : 0,
+        legalFee: formData.legalFee ? Number(formData.legalFee) : 0,
+        agencyFee: formData.agencyFee ? Number(formData.agencyFee) : 0,
+        serviceCharge: formData.serviceCharge ? Number(formData.serviceCharge) : 0,
+        totalMoveInCost,
         amenities: formData.amenities.trim(),
-        additionalCosts: formData.additionalCosts.trim(),
         contact: formData.contact.trim(),
         description: formData.description.trim(),
         images: imageUrls,
-        image: imageUrls[0], // keep first image as main for cards
+        image: imageUrls[0] || null,
         videoUrl: videoUrl || null,
         verified: false,
         featured: false,
@@ -206,7 +228,7 @@ export default function AddListingPage() {
             </div>
             <div className="form-row">
               <div className="form-group">
-                <label className="file-label">Price (₦ / year)</label>
+                <label className="file-label">Annual Rent (₦)</label>
                 <input type="number" name="price" placeholder="e.g. 250000" value={formData.price} onChange={handleChange} />
                 {errors.price && <p className="form-error">{errors.price}</p>}
               </div>
@@ -217,6 +239,7 @@ export default function AddListingPage() {
                   <option value="Self Contain">Self Contain</option>
                   <option value="Single Room">Single Room</option>
                   <option value="Mini Flat">Mini Flat</option>
+                  <option value="1 Bedroom Flat">1 Bedroom Flat</option>
                   <option value="2 Bedroom Flat">2 Bedroom Flat</option>
                   <option value="3 Bedroom Flat">3 Bedroom Flat</option>
                   <option value="Shared Room">Shared Room</option>
@@ -250,14 +273,15 @@ export default function AddListingPage() {
           <div className="form-section">
             <p className="form-section__title">Location</p>
             <div className="form-group">
-              <label className="file-label">Area / Street</label>
+              <label className="file-label">Area / Neighbourhood</label>
               <input type="text" name="location" placeholder="e.g. Alakahia, Choba, Rumuola" value={formData.location} onChange={handleChange} />
               {errors.location && <p className="form-error">{errors.location}</p>}
             </div>
             <div className="form-group">
-              <label className="file-label">Distance from RSU Gate</label>
-              <input type="text" name="distanceFromRSU" placeholder="e.g. 5 mins walk, 1.2km" value={formData.distanceFromRSU} onChange={handleChange} />
-              {errors.distanceFromRSU && <p className="form-error">{errors.distanceFromRSU}</p>}
+              <label className="file-label">Full Property Address</label>
+              <input type="text" name="address" placeholder="e.g. No. 5 Alakahia Road, Choba, Port Harcourt" value={formData.address} onChange={handleChange} />
+              <p className="form-hint">Used to generate a Google Maps link for students</p>
+              {errors.address && <p className="form-error">{errors.address}</p>}
             </div>
           </div>
 
@@ -291,10 +315,75 @@ export default function AddListingPage() {
               <input type="text" name="paymentTerms" placeholder="e.g. 1 year upfront, 6 months accepted" value={formData.paymentTerms} onChange={handleChange} />
               {errors.paymentTerms && <p className="form-error">{errors.paymentTerms}</p>}
             </div>
-            <div className="form-group">
-              <label className="file-label">Additional Costs</label>
-              <input type="text" name="additionalCosts" placeholder="e.g. ₦20k service charge, no caution fee" value={formData.additionalCosts} onChange={handleChange} />
+          </div>
+
+          {/* Move-in Costs */}
+          <div className="form-section">
+            <p className="form-section__title">Move-in Costs</p>
+            <p className="form-hint" style={{ marginBottom: "12px" }}>
+              Enter 0 if a fee doesn't apply. This helps students know the total cost upfront.
+            </p>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="file-label">Caution Fee (₦)</label>
+                <input type="number" name="cautionFee" placeholder="e.g. 50000" value={formData.cautionFee} onChange={handleChange} />
+              </div>
+              <div className="form-group">
+                <label className="file-label">Legal Fee (₦)</label>
+                <input type="number" name="legalFee" placeholder="e.g. 30000" value={formData.legalFee} onChange={handleChange} />
+              </div>
             </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="file-label">Agency Fee (₦)</label>
+                <input type="number" name="agencyFee" placeholder="e.g. 0 if no agent" value={formData.agencyFee} onChange={handleChange} />
+              </div>
+              <div className="form-group">
+                <label className="file-label">Service Charge (₦)</label>
+                <input type="number" name="serviceCharge" placeholder="e.g. 20000" value={formData.serviceCharge} onChange={handleChange} />
+              </div>
+            </div>
+
+            {totalMoveInCost > 0 && (
+              <div className="form-total">
+                <div className="form-total__breakdown">
+                  {Number(formData.price) > 0 && (
+                    <div className="form-total__row">
+                      <span>Annual Rent</span>
+                      <span>₦{Number(formData.price).toLocaleString()}</span>
+                    </div>
+                  )}
+                  {Number(formData.cautionFee) > 0 && (
+                    <div className="form-total__row">
+                      <span>Caution Fee</span>
+                      <span>₦{Number(formData.cautionFee).toLocaleString()}</span>
+                    </div>
+                  )}
+                  {Number(formData.legalFee) > 0 && (
+                    <div className="form-total__row">
+                      <span>Legal Fee</span>
+                      <span>₦{Number(formData.legalFee).toLocaleString()}</span>
+                    </div>
+                  )}
+                  {Number(formData.agencyFee) > 0 && (
+                    <div className="form-total__row">
+                      <span>Agency Fee</span>
+                      <span>₦{Number(formData.agencyFee).toLocaleString()}</span>
+                    </div>
+                  )}
+                  {Number(formData.serviceCharge) > 0 && (
+                    <div className="form-total__row">
+                      <span>Service Charge</span>
+                      <span>₦{Number(formData.serviceCharge).toLocaleString()}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="form-total__final">
+                  <span>Total Move-in Cost</span>
+                  <strong>₦{totalMoveInCost.toLocaleString()}</strong>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Amenities */}
@@ -310,9 +399,12 @@ export default function AddListingPage() {
           {/* Media */}
           <div className="form-section">
             <p className="form-section__title">Photos & Video</p>
+            <p className="form-hint" style={{ marginBottom: "12px" }}>
+              Upload photos, a video, or both. At least one is required.
+            </p>
 
             <div className="form-group">
-              <label className="file-label">Property Images (up to 5)</label>
+              <label className="file-label">Property Photos (up to 5) — optional if video uploaded</label>
               <input
                 type="file"
                 accept="image/*"
@@ -320,7 +412,6 @@ export default function AddListingPage() {
                 className="file-input"
                 onChange={handleImageChange}
               />
-              {errors.images && <p className="form-error">{errors.images}</p>}
               {imagePreviews.length > 0 && (
                 <div className="media-preview__grid">
                   {imagePreviews.map((src, i) => (
@@ -335,14 +426,14 @@ export default function AddListingPage() {
             </div>
 
             <div className="form-group">
-              <label className="file-label">Property Video (optional)</label>
+              <label className="file-label">Property Video — optional if photos uploaded</label>
               <input
                 type="file"
                 accept="video/*"
                 className="file-input"
                 onChange={handleVideoChange}
               />
-              <p className="form-hint">Max recommended: 50MB. Short walkthrough videos work best.</p>
+              <p className="form-hint">Short walkthrough videos work best. Max 50MB recommended.</p>
               {videoPreview && (
                 <div className="media-preview__video">
                   <video src={videoPreview} controls />
@@ -350,6 +441,8 @@ export default function AddListingPage() {
                 </div>
               )}
             </div>
+
+            {errors.media && <p className="form-error">{errors.media}</p>}
           </div>
 
           {/* Contact */}
@@ -373,9 +466,7 @@ export default function AddListingPage() {
           </div>
 
           {uploadProgress && (
-            <div className="add-listing-page__progress">
-              {uploadProgress}
-            </div>
+            <div className="add-listing-page__progress">{uploadProgress}</div>
           )}
 
           <button type="submit" disabled={saving}>

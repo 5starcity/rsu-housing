@@ -22,6 +22,7 @@ import {
   HiOutlineEye,
   HiOutlineCalendarDays,
   HiOutlinePlayCircle,
+  HiOutlineCalculator,
 } from "react-icons/hi2";
 import {
   fetchListingById,
@@ -128,8 +129,8 @@ export default function ListingDetailsPage() {
   const images = listing.images && listing.images.length > 0
     ? listing.images
     : listing.image
-      ? [listing.image]
-      : [];
+    ? [listing.image]
+    : [];
 
   const isOwner = user && user.uid === listing.landlordId;
   const saved = favorites.includes(listing.id);
@@ -141,6 +142,20 @@ export default function ListingDetailsPage() {
 
   const whatsappHref = "https://wa.me/" + whatsappNumber;
   const telHref = "tel:" + listing.contact;
+
+  const hasCostBreakdown = listing.cautionFee || listing.legalFee || listing.agencyFee || listing.serviceCharge;
+  const totalMoveInCost = listing.totalMoveInCost ||
+    (Number(listing.price) || 0) +
+    (Number(listing.cautionFee) || 0) +
+    (Number(listing.legalFee) || 0) +
+    (Number(listing.agencyFee) || 0) +
+    (Number(listing.serviceCharge) || 0);
+
+  // Build maps URL from address if not already saved
+  const mapsUrl = listing.mapsUrl ||
+    (listing.address
+      ? "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(listing.address + ", Port Harcourt, Nigeria")
+      : null);
 
   function handleToggleFavorite() {
     const updated = toggleFavorite(listing.id);
@@ -154,24 +169,31 @@ export default function ListingDetailsPage() {
   async function handleSave() {
     setSaving(true);
     try {
+      const newMapsUrl = editForm.address
+        ? "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(editForm.address + ", Port Harcourt, Nigeria")
+        : listing.mapsUrl || null;
+
       await updateListing(listingId, {
         title: editForm.title,
         price: editForm.price,
         location: editForm.location,
-        distanceFromRSU: editForm.distanceFromRSU,
+        address: editForm.address,
+        mapsUrl: newMapsUrl,
         type: editForm.type,
         beds: editForm.beds,
         baths: editForm.baths,
         furnishing: editForm.furnishing,
         availability: editForm.availability,
         paymentTerms: editForm.paymentTerms,
+        cautionFee: editForm.cautionFee,
+        legalFee: editForm.legalFee,
+        agencyFee: editForm.agencyFee,
+        serviceCharge: editForm.serviceCharge,
         amenities: editForm.amenities,
-        additionalCosts: editForm.additionalCosts,
-        image: editForm.image,
         contact: editForm.contact,
         description: editForm.description,
       });
-      setListing({ ...listing, ...editForm });
+      setListing({ ...listing, ...editForm, mapsUrl: newMapsUrl });
       setIsEditing(false);
     } catch (error) {
       console.error("Error updating listing:", error);
@@ -264,12 +286,17 @@ export default function ListingDetailsPage() {
                 autoPlay
                 className="details-page__video"
               />
-            ) : (
+            ) : images.length > 0 ? (
               <img
-                src={images[activeMedia] || listing.image}
+                src={images[activeMedia]}
                 alt={listing.title}
                 className="details-page__image"
               />
+            ) : (
+              <div className="details-page__no-media">
+                <HiOutlineHomeModern />
+                <p>No photos available</p>
+              </div>
             )}
           </div>
 
@@ -294,6 +321,16 @@ export default function ListingDetailsPage() {
                 </button>
               )}
             </div>
+          )}
+
+          {/* Video only listing — show video directly */}
+          {images.length === 0 && listing.videoUrl && !showVideo && (
+            <button
+              className="details-page__play-video-btn"
+              onClick={() => setShowVideo(true)}
+            >
+              <HiOutlinePlayCircle /> Watch Property Video
+            </button>
           )}
         </motion.div>
 
@@ -338,12 +375,12 @@ export default function ListingDetailsPage() {
                   <input name="type" value={editForm.type || ""} onChange={handleEditChange} />
                 </div>
                 <div className="edit-form__field">
-                  <label>Location</label>
+                  <label>Location / Area</label>
                   <input name="location" value={editForm.location || ""} onChange={handleEditChange} />
                 </div>
-                <div className="edit-form__field">
-                  <label>Distance from campus</label>
-                  <input name="distanceFromRSU" value={editForm.distanceFromRSU || ""} onChange={handleEditChange} />
+                <div className="edit-form__field edit-form__field--full">
+                  <label>Full Address (for map)</label>
+                  <input name="address" value={editForm.address || ""} onChange={handleEditChange} placeholder="e.g. No. 5 Alakahia Road, Choba" />
                 </div>
                 <div className="edit-form__field">
                   <label>Bedrooms</label>
@@ -365,13 +402,25 @@ export default function ListingDetailsPage() {
                   <label>Payment Terms</label>
                   <input name="paymentTerms" value={editForm.paymentTerms || ""} onChange={handleEditChange} />
                 </div>
+                <div className="edit-form__field">
+                  <label>Caution Fee (₦)</label>
+                  <input type="number" name="cautionFee" value={editForm.cautionFee || ""} onChange={handleEditChange} />
+                </div>
+                <div className="edit-form__field">
+                  <label>Legal Fee (₦)</label>
+                  <input type="number" name="legalFee" value={editForm.legalFee || ""} onChange={handleEditChange} />
+                </div>
+                <div className="edit-form__field">
+                  <label>Agency Fee (₦)</label>
+                  <input type="number" name="agencyFee" value={editForm.agencyFee || ""} onChange={handleEditChange} />
+                </div>
+                <div className="edit-form__field">
+                  <label>Service Charge (₦)</label>
+                  <input type="number" name="serviceCharge" value={editForm.serviceCharge || ""} onChange={handleEditChange} />
+                </div>
                 <div className="edit-form__field edit-form__field--full">
                   <label>Amenities</label>
                   <input name="amenities" value={editForm.amenities || ""} onChange={handleEditChange} />
-                </div>
-                <div className="edit-form__field edit-form__field--full">
-                  <label>Additional Costs</label>
-                  <input name="additionalCosts" value={editForm.additionalCosts || ""} onChange={handleEditChange} />
                 </div>
                 <div className="edit-form__field edit-form__field--full">
                   <label>Contact</label>
@@ -405,12 +454,10 @@ export default function ListingDetailsPage() {
                   <p className="details-page__location">
                     <HiOutlineMapPin />
                     <span>{listing.location}</span>
-                    {listing.distanceFromRSU && (
-                      <span className="details-page__distance">
-                        · {listing.distanceFromRSU} from campus
-                      </span>
-                    )}
                   </p>
+                  {listing.address && (
+                    <p className="details-page__address-text">{listing.address}</p>
+                  )}
                   <div className="details-page__meta">
                     {listing.createdAt && (
                       <span><HiOutlineCalendarDays />{formatDate(listing.createdAt)}</span>
@@ -425,6 +472,7 @@ export default function ListingDetailsPage() {
                   <p className="details-page__price">
                     ₦{Number(listing.price).toLocaleString()}
                   </p>
+                  <p className="details-page__price-label">per year</p>
                   <div className="details-page__top-actions">
                     <button
                       type="button"
@@ -479,13 +527,83 @@ export default function ListingDetailsPage() {
                     <div><span>Payment</span><strong>{listing.paymentTerms}</strong></div>
                   </div>
                 )}
-                {listing.distanceFromRSU && (
-                  <div className="details-page__fact">
-                    <HiOutlineMapPin />
-                    <div><span>From Campus</span><strong>{listing.distanceFromRSU}</strong></div>
-                  </div>
-                )}
               </div>
+
+              {/* Map Button */}
+              {mapsUrl && (
+                <div className="details-page__map-btn-wrap">
+                  <a
+                    href={mapsUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="details-page__map-btn"
+                  >
+                    <HiOutlineMapPin /> View Location on Google Maps
+                  </a>
+                </div>
+              )}
+
+              {/* Move-in Cost Breakdown */}
+              {hasCostBreakdown && (
+                <div className="details-page__section">
+                  <h2>
+                    <HiOutlineCalculator style={{ display: "inline", marginRight: "8px", verticalAlign: "middle" }} />
+                    Move-in Cost Breakdown
+                  </h2>
+                  <div className="details-page__costs">
+                    <div className="details-page__cost-row">
+                      <span>Annual Rent</span>
+                      <span>₦{Number(listing.price).toLocaleString()}</span>
+                    </div>
+                    {Number(listing.cautionFee) > 0 && (
+                      <div className="details-page__cost-row">
+                        <span>Caution Fee</span>
+                        <span>₦{Number(listing.cautionFee).toLocaleString()}</span>
+                      </div>
+                    )}
+                    {Number(listing.cautionFee) === 0 && listing.cautionFee !== undefined && (
+                      <div className="details-page__cost-row details-page__cost-row--free">
+                        <span>Caution Fee</span>
+                        <span>None ✓</span>
+                      </div>
+                    )}
+                    {Number(listing.legalFee) > 0 && (
+                      <div className="details-page__cost-row">
+                        <span>Legal Fee</span>
+                        <span>₦{Number(listing.legalFee).toLocaleString()}</span>
+                      </div>
+                    )}
+                    {Number(listing.legalFee) === 0 && listing.legalFee !== undefined && (
+                      <div className="details-page__cost-row details-page__cost-row--free">
+                        <span>Legal Fee</span>
+                        <span>None ✓</span>
+                      </div>
+                    )}
+                    {Number(listing.agencyFee) > 0 && (
+                      <div className="details-page__cost-row">
+                        <span>Agency Fee</span>
+                        <span>₦{Number(listing.agencyFee).toLocaleString()}</span>
+                      </div>
+                    )}
+                    {Number(listing.agencyFee) === 0 && listing.agencyFee !== undefined && (
+                      <div className="details-page__cost-row details-page__cost-row--free">
+                        <span>Agency Fee</span>
+                        <span>No Agent ✓</span>
+                      </div>
+                    )}
+                    {Number(listing.serviceCharge) > 0 && (
+                      <div className="details-page__cost-row">
+                        <span>Service Charge</span>
+                        <span>₦{Number(listing.serviceCharge).toLocaleString()}</span>
+                      </div>
+                    )}
+                    <div className="details-page__cost-total">
+                      <span>Total Move-in Cost</span>
+                      <strong>₦{totalMoveInCost.toLocaleString()}</strong>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {listing.amenities && (
                 <div className="details-page__section">
@@ -500,13 +618,6 @@ export default function ListingDetailsPage() {
                 </div>
               )}
 
-              {listing.additionalCosts && (
-                <div className="details-page__section">
-                  <h2>Additional Costs</h2>
-                  <p>{listing.additionalCosts}</p>
-                </div>
-              )}
-
               <div className="details-page__section">
                 <h2>Description</h2>
                 <p>{listing.description}</p>
@@ -516,7 +627,7 @@ export default function ListingDetailsPage() {
                 <h2>Quick Actions</h2>
                 <div className="details-page__actions">
                   
-                   <a href={whatsappHref}
+                    <a href={whatsappHref}
                     target="_blank"
                     rel="noreferrer"
                     className="details-page__button details-page__button--primary"
@@ -524,7 +635,7 @@ export default function ListingDetailsPage() {
                     <HiOutlineChatBubbleLeftRight /> Chat on WhatsApp
                   </a>
                   
-                    <a href={telHref}
+                   <a href={telHref}
                     className="details-page__button details-page__button--secondary"
                   >
                     <HiOutlinePhone /> Call Now
@@ -596,8 +707,8 @@ export default function ListingDetailsPage() {
               </div>
             </motion.div>
           )}
-      </motion.div>
-    </section>
-    </main >
+        </motion.div>
+      </section>
+    </main>
   );
 }

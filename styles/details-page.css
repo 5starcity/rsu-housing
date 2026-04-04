@@ -812,6 +812,7 @@
     padding: 18px;
   }
 }
+
 /* Express Interest */
 .details-page__interest {
   margin-top: 16px;
@@ -881,4 +882,40 @@
   font-size: 0.82rem;
   color: #94a3b8;
   margin: 0;
+}
+
+/* Address */
+.details-page__address {
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+/* Map button */
+.details-page__map-btn-wrap {
+  margin-bottom: 28px;
+}
+
+.details-page__map-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: rgba(96, 165, 250, 0.08);
+  border: 1px solid rgba(96, 165, 250, 0.2);
+  border-radius: 10px;
+  color: #60a5fa;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.details-page__map-btn:hover {
+  background: rgba(96, 165, 250, 0.15);
+  border-color: rgba(96, 165, 250, 0.4);
+  transform: translateY(-1px);
+}
+
+.details-page__map-btn svg {
+  font-size: 1rem;
 }
