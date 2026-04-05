@@ -14,6 +14,7 @@ import {
   HiOutlineArrowRightOnRectangle,
   HiOutlineArrowLeftOnRectangle,
   HiOutlineUserPlus,
+  HiOutlineChartBarSquare,
   HiXMark,
   HiBars3,
 } from "react-icons/hi2";
@@ -35,6 +36,8 @@ export default function Navbar() {
     setMenuOpen(false);
   }
 
+  const isActive = (href) => pathname === href;
+
   return (
     <>
       <nav className="navbar">
@@ -45,19 +48,38 @@ export default function Navbar() {
 
           {/* Desktop Nav */}
           <div className="navbar__links">
-            <Link href="/listings" className={pathname === "/listings" ? "active" : ""}>Browse</Link>
+            <Link href="/listings" className={isActive("/listings") ? "active" : ""}>
+              Browse
+            </Link>
             {userRole === "landlord" && (
-              <Link href="/add-listing" className={pathname === "/add-listing" ? "active" : ""}>Add Listing</Link>
+              <>
+                <Link href="/add-listing" className={isActive("/add-listing") ? "active" : ""}>
+                  Add Listing
+                </Link>
+                <Link href="/dashboard" className={isActive("/dashboard") ? "active" : ""}>
+                  Dashboard
+                </Link>
+              </>
             )}
-            <Link href="/saved-listings" className={pathname === "/saved-listings" ? "active" : ""}>Saved</Link>
+            <Link href="/saved-listings" className={isActive("/saved-listings") ? "active" : ""}>
+              Saved
+            </Link>
           </div>
 
           {/* Desktop Auth */}
           <div className="navbar__auth">
             {user ? (
               <div className="navbar__user">
-                <span className="navbar__username">👋 {user.displayName?.split(" ")[0]}</span>
-                <button onClick={handleLogout} className="navbar__logout">Log Out</button>
+                <Link
+                  href="/profile"
+                  className={"navbar__username" + (isActive("/profile") ? " active" : "")}
+                  onClick={closeMenu}
+                >
+                  👋 {user.displayName?.split(" ")[0]}
+                </Link>
+                <button onClick={handleLogout} className="navbar__logout">
+                  Log Out
+                </button>
               </div>
             ) : (
               <>
@@ -93,24 +115,40 @@ export default function Navbar() {
         </div>
 
         <div className="navbar__drawer-links">
-          <Link href="/" className="navbar__drawer-link" onClick={closeMenu}>
+          <Link href="/" className={"navbar__drawer-link" + (isActive("/") ? " active" : "")} onClick={closeMenu}>
             <HiOutlineHome />
             <span>Home</span>
           </Link>
-          <Link href="/listings" className="navbar__drawer-link" onClick={closeMenu}>
+
+          <Link href="/listings" className={"navbar__drawer-link" + (isActive("/listings") ? " active" : "")} onClick={closeMenu}>
             <HiOutlineHome />
             <span>Browse Listings</span>
           </Link>
+
           {userRole === "landlord" && (
-            <Link href="/add-listing" className="navbar__drawer-link" onClick={closeMenu}>
-              <HiOutlinePlus />
-              <span>Add Listing</span>
-            </Link>
+            <>
+              <Link href="/add-listing" className={"navbar__drawer-link" + (isActive("/add-listing") ? " active" : "")} onClick={closeMenu}>
+                <HiOutlinePlus />
+                <span>Add Listing</span>
+              </Link>
+              <Link href="/dashboard" className={"navbar__drawer-link" + (isActive("/dashboard") ? " active" : "")} onClick={closeMenu}>
+                <HiOutlineChartBarSquare />
+                <span>Dashboard</span>
+              </Link>
+            </>
           )}
-          <Link href="/saved-listings" className="navbar__drawer-link" onClick={closeMenu}>
+
+          <Link href="/saved-listings" className={"navbar__drawer-link" + (isActive("/saved-listings") ? " active" : "")} onClick={closeMenu}>
             <HiOutlineBookmark />
             <span>Saved Listings</span>
           </Link>
+
+          {user && (
+            <Link href="/profile" className={"navbar__drawer-link" + (isActive("/profile") ? " active" : "")} onClick={closeMenu}>
+              <HiOutlineUser />
+              <span>My Profile</span>
+            </Link>
+          )}
         </div>
 
         <div className="navbar__drawer-auth">

@@ -757,4 +757,4 @@ export default function ListingDetailsPage() {
       </section>
     </main>
   );
-}git
+}
