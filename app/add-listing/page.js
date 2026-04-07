@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { createListing } from "@/lib/firestoreListings";
 import { uploadToCloudinary } from "@/lib/cloudinary";
+import { LOCATIONS, UST_GATE_AREAS, OTHER_PH_AREAS } from "@/lib/locations";
 import "@/styles/add-listing.css";
 
 const initialForm = {
@@ -47,7 +48,7 @@ export default function AddListingPage() {
     else if (userRole && userRole !== "landlord") router.push("/listings");
   }, [user, userRole]);
 
-  if (!user || userRole === "student") return null;
+  if (!user || userRole !== "landlord") return null;
 
   const totalMoveInCost = useMemo(() => {
     const rent = Number(formData.price) || 0;
@@ -57,6 +58,9 @@ export default function AddListingPage() {
     const service = Number(formData.serviceCharge) || 0;
     return rent + caution + legal + agency + service;
   }, [formData.price, formData.cautionFee, formData.legalFee, formData.agencyFee, formData.serviceCharge]);
+
+  // When location changes, auto-build the maps URL base
+  const selectedLocation = LOCATIONS.find((l) => l.value === formData.location);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -98,17 +102,15 @@ export default function AddListingPage() {
     } else if (Number(formData.price) <= 0) {
       newErrors.price = "Price must be greater than 0";
     }
-    if (!formData.location.trim()) newErrors.location = "Location is required";
-    if (!formData.address.trim()) newErrors.address = "Property address is required";
+    if (!formData.location) newErrors.location = "Location is required";
+    if (!formData.address.trim()) newErrors.address = "Full property address is required";
     if (!formData.type.trim()) newErrors.type = "Property type is required";
     if (!formData.furnishing.trim()) newErrors.furnishing = "Furnishing status is required";
     if (!formData.availability.trim()) newErrors.availability = "Availability is required";
     if (!formData.paymentTerms.trim()) newErrors.paymentTerms = "Payment terms are required";
-
     if (imageFiles.length === 0 && !videoFile) {
       newErrors.media = "Upload at least one photo or a video";
     }
-
     if (!formData.contact.trim()) {
       newErrors.contact = "Contact number is required";
     } else if (formData.contact.trim().length < 11) {
@@ -146,12 +148,15 @@ export default function AddListingPage() {
 
       setUploadProgress("Saving listing...");
 
-      const mapsUrl = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(formData.address + ", Port Harcourt, Nigeria");
+      // Use the selected location's mapQuery for a precise Maps URL
+      const mapBase = selectedLocation?.mapQuery || formData.location + ", Port Harcourt, Nigeria";
+      const mapsUrl = "https://www.google.com/maps/search/?api=1&query=" +
+        encodeURIComponent(formData.address.trim() + ", " + mapBase);
 
       await createListing({
         title: formData.title.trim(),
         price: formData.price,
-        location: formData.location.trim(),
+        location: formData.location,
         address: formData.address.trim(),
         mapsUrl,
         type: formData.type.trim(),
@@ -195,6 +200,10 @@ export default function AddListingPage() {
     }
   }
 
+  // Split locations into groups for the optgroup dropdown
+  const ustAreas = LOCATIONS.filter((l) => UST_GATE_AREAS.includes(l.value));
+  const otherAreas = LOCATIONS.filter((l) => OTHER_PH_AREAS.includes(l.value));
+
   return (
     <main className="add-listing-page">
       <section className="add-listing-page__card">
@@ -221,13 +230,25 @@ export default function AddListingPage() {
             <p className="form-section__title">Basic Information</p>
             <div className="form-group">
               <label className="file-label">Property Title</label>
-              <input type="text" name="title" placeholder="e.g. Modern 2-bedroom flat in GRA" value={formData.title} onChange={handleChange} />
+              <input
+                type="text"
+                name="title"
+                placeholder="e.g. Modern self-contain near UST Back Gate"
+                value={formData.title}
+                onChange={handleChange}
+              />
               {errors.title && <p className="form-error">{errors.title}</p>}
             </div>
             <div className="form-row">
               <div className="form-group">
                 <label className="file-label">Annual Rent (₦)</label>
-                <input type="number" name="price" placeholder="e.g. 500000" value={formData.price} onChange={handleChange} />
+                <input
+                  type="number"
+                  name="price"
+                  placeholder="e.g. 300000"
+                  value={formData.price}
+                  onChange={handleChange}
+                />
                 {errors.price && <p className="form-error">{errors.price}</p>}
               </div>
               <div className="form-group">
@@ -270,15 +291,44 @@ export default function AddListingPage() {
           {/* Location */}
           <div className="form-section">
             <p className="form-section__title">Location</p>
+
             <div className="form-group">
               <label className="file-label">Area / Neighbourhood</label>
-              <input type="text" name="location" placeholder="e.g. GRA Phase 2, Rumuola, Woji" value={formData.location} onChange={handleChange} />
+              <select name="location" value={formData.location} onChange={handleChange}>
+                <option value="">Select area</option>
+                <optgroup label="— UST Gate Areas">
+                  {ustAreas.map((loc) => (
+                    <option key={loc.value} value={loc.value}>
+                      {loc.label}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="— Other Port Harcourt Areas">
+                  {otherAreas.map((loc) => (
+                    <option key={loc.value} value={loc.value}>
+                      {loc.label}
+                    </option>
+                  ))}
+                </optgroup>
+              </select>
+              {selectedLocation && (
+                <p className="form-hint">{selectedLocation.hint}</p>
+              )}
               {errors.location && <p className="form-error">{errors.location}</p>}
             </div>
+
             <div className="form-group">
-              <label className="file-label">Full Property Address</label>
-              <input type="text" name="address" placeholder="e.g. No. 12 Rumuola Road, Port Harcourt" value={formData.address} onChange={handleChange} />
-              <p className="form-hint">Used to generate a Google Maps link for prospective tenants</p>
+              <label className="file-label">Full Street Address</label>
+              <input
+                type="text"
+                name="address"
+                placeholder="e.g. No. 5 Alakahia Road, Choba"
+                value={formData.address}
+                onChange={handleChange}
+              />
+              <p className="form-hint">
+                Used to generate a precise Google Maps link — include street name and number
+              </p>
               {errors.address && <p className="form-error">{errors.address}</p>}
             </div>
           </div>
@@ -310,7 +360,13 @@ export default function AddListingPage() {
             </div>
             <div className="form-group">
               <label className="file-label">Payment Terms</label>
-              <input type="text" name="paymentTerms" placeholder="e.g. 1 year upfront, 6 months accepted" value={formData.paymentTerms} onChange={handleChange} />
+              <input
+                type="text"
+                name="paymentTerms"
+                placeholder="e.g. 1 year upfront, 6 months accepted"
+                value={formData.paymentTerms}
+                onChange={handleChange}
+              />
               {errors.paymentTerms && <p className="form-error">{errors.paymentTerms}</p>}
             </div>
           </div>
@@ -389,7 +445,13 @@ export default function AddListingPage() {
             <p className="form-section__title">Amenities & Features</p>
             <div className="form-group">
               <label className="file-label">Amenities</label>
-              <input type="text" name="amenities" placeholder="e.g. Running water, Prepaid meter, Security, Parking" value={formData.amenities} onChange={handleChange} />
+              <input
+                type="text"
+                name="amenities"
+                placeholder="e.g. Running water, Prepaid meter, Security, Parking"
+                value={formData.amenities}
+                onChange={handleChange}
+              />
               <p className="form-hint">Separate each amenity with a comma</p>
             </div>
           </div>
@@ -400,16 +462,9 @@ export default function AddListingPage() {
             <p className="form-hint" style={{ marginBottom: "12px" }}>
               Upload photos, a video, or both. At least one is required.
             </p>
-
             <div className="form-group">
               <label className="file-label">Property Photos (up to 5) — optional if video uploaded</label>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                className="file-input"
-                onChange={handleImageChange}
-              />
+              <input type="file" accept="image/*" multiple className="file-input" onChange={handleImageChange} />
               {imagePreviews.length > 0 && (
                 <div className="media-preview__grid">
                   {imagePreviews.map((src, i) => (
@@ -422,15 +477,9 @@ export default function AddListingPage() {
                 </div>
               )}
             </div>
-
             <div className="form-group">
               <label className="file-label">Property Video — optional if photos uploaded</label>
-              <input
-                type="file"
-                accept="video/*"
-                className="file-input"
-                onChange={handleVideoChange}
-              />
+              <input type="file" accept="video/*" className="file-input" onChange={handleVideoChange} />
               <p className="form-hint">A short walkthrough video works best. Max 50MB recommended.</p>
               {videoPreview && (
                 <div className="media-preview__video">
@@ -439,7 +488,6 @@ export default function AddListingPage() {
                 </div>
               )}
             </div>
-
             {errors.media && <p className="form-error">{errors.media}</p>}
           </div>
 
@@ -448,7 +496,13 @@ export default function AddListingPage() {
             <p className="form-section__title">Contact</p>
             <div className="form-group">
               <label className="file-label">Contact Number</label>
-              <input type="text" name="contact" placeholder="e.g. 08012345678" value={formData.contact} onChange={handleChange} />
+              <input
+                type="text"
+                name="contact"
+                placeholder="e.g. 08012345678"
+                value={formData.contact}
+                onChange={handleChange}
+              />
               {errors.contact && <p className="form-error">{errors.contact}</p>}
             </div>
           </div>
@@ -458,7 +512,13 @@ export default function AddListingPage() {
             <p className="form-section__title">Description</p>
             <div className="form-group">
               <label className="file-label">About this property</label>
-              <textarea rows="5" name="description" placeholder="Describe the property, the neighbourhood, and what makes it a great place to live..." value={formData.description} onChange={handleChange} />
+              <textarea
+                rows="5"
+                name="description"
+                placeholder="Describe the property, the neighbourhood, proximity to landmarks, and what makes it a great place to live..."
+                value={formData.description}
+                onChange={handleChange}
+              />
               {errors.description && <p className="form-error">{errors.description}</p>}
             </div>
           </div>

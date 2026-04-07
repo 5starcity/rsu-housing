@@ -18,7 +18,7 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          Verified housing in Port Harcourt — no hidden fees, no stress
+          Verified housing in Port Harcourt — no hidden fees, no surprises
         </motion.p>
 
         <motion.h1
@@ -26,7 +26,7 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
         >
-          Find a place to live without the wahala
+          Find your next home with confidence
         </motion.h1>
 
         <motion.p
@@ -35,8 +35,8 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.18 }}
         >
-          Browse verified listings in Port Harcourt with clear prices, real
-          photos, and direct contact to landlords. No stress. No hidden fees.
+          Browse verified listings with clear pricing, real photos, and direct
+          contact options. Everything you need to make the right choice.
         </motion.p>
 
         <motion.div
@@ -48,11 +48,13 @@ export default function Hero() {
           <Link href="/listings" className="hero__btn hero__btn--primary">
             Explore Listings
           </Link>
+
           {!user && (
             <Link href="/signup" className="hero__btn hero__btn--secondary">
               List Your Property
             </Link>
           )}
+
           {userRole === "landlord" && (
             <Link href="/add-listing" className="hero__btn hero__btn--secondary">
               Post Property
@@ -67,16 +69,18 @@ export default function Hero() {
           transition={{ duration: 0.4, delay: 0.36 }}
         >
           <div className="hero__stat">
-            <strong>No Agents</strong>
-            <span>Talk directly to landlords</span>
+            <strong>Transparent Pricing</strong>
+            <span>Know the full cost upfront</span>
           </div>
+
           <div className="hero__stat">
             <strong>Verified Listings</strong>
             <span>Trusted properties only</span>
           </div>
+
           <div className="hero__stat">
             <strong>Port Harcourt</strong>
-            <span>Built for easy housing</span>
+            <span>Built for easier housing</span>
           </div>
         </motion.div>
       </div>

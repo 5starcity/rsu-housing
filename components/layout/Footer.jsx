@@ -9,18 +9,22 @@ export default function Footer() {
     <footer className="footer">
       <div className="footer__container">
 
+        {/* TOP */}
         <div className="footer__top">
+
           {/* Brand */}
           <div className="footer__brand">
             <p className="footer__logo">
               DWE <span>LLA</span>
             </p>
+
             <p className="footer__tagline">
-              Find verified housing in Port Harcourt — no hidden fees, no stress.
+              Find verified homes in Port Harcourt with transparent pricing and no hidden fees.
             </p>
+
           </div>
 
-          {/* Links */}
+          {/* Browse */}
           <div className="footer__links-group">
             <p className="footer__links-title">Browse</p>
             <Link href="/listings">All Listings</Link>
@@ -28,6 +32,7 @@ export default function Footer() {
             <Link href="/saved-listings">Saved Listings</Link>
           </div>
 
+          {/* Landlords */}
           <div className="footer__links-group">
             <p className="footer__links-title">Landlords</p>
             <Link href="/signup">Create Account</Link>
@@ -35,19 +40,31 @@ export default function Footer() {
             <Link href="/verify-landlord">Get Verified</Link>
           </div>
 
+          {/* Support / Trust */}
           <div className="footer__links-group">
-            <p className="footer__links-title">Account</p>
-            <Link href="/login">Log In</Link>
-            <Link href="/signup">Sign Up</Link>
+            <p className="footer__links-title">Support</p>
+            <Link href="/about">About Dwella</Link>
+            <Link href="/contact">Contact</Link>
+            <Link href="/report">Report a Listing</Link>
           </div>
+
+          {/* Legal */}
+          <div className="footer__links-group">
+            <p className="footer__links-title">Legal</p>
+            <Link href="/terms">Terms of Service</Link>
+            <Link href="/privacy">Privacy Policy</Link>
+          </div>
+
         </div>
 
+        {/* BOTTOM */}
         <div className="footer__bottom">
           <p className="footer__copy">
             © {year} Dwella. All rights reserved.
           </p>
+
           <p className="footer__sub">
-            Built for convience. No stress. No hidden fees.
+            Clear pricing. Trusted listings. Better decisions.
           </p>
         </div>
 

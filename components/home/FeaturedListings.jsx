@@ -14,12 +14,14 @@ export default function FeaturedListings() {
     async function load() {
       try {
         const data = await fetchListings();
-        // Show verified first, then latest, max 6
+
+        // Show verified first
         const sorted = data.sort((a, b) => {
           if (a.verified && !b.verified) return -1;
           if (!a.verified && b.verified) return 1;
           return 0;
         });
+
         setListings(sorted.slice(0, 6));
       } catch (error) {
         console.error("Error fetching featured listings:", error);
@@ -35,10 +37,12 @@ export default function FeaturedListings() {
     <section className="featured">
       <div className="featured__header">
         <p className="featured__tag">Featured Properties</p>
-        <h2>Places students would actually want to live in</h2>
+
+        <h2>Explore Available Homes</h2>
+
         <p>
-          Verified listings with clear prices, real details, and direct
-          landlord contact.
+          Discover verified properties with transparent pricing, real photos,
+          and everything you need to make the right decision.
         </p>
       </div>
 
@@ -48,9 +52,10 @@ export default function FeaturedListings() {
         </div>
       ) : listings.length === 0 ? (
         <div className="featured__empty">
-          <p>No listings yet. Be the first to post a property.</p>
-          <Link href="/add-listing" className="featured__empty-btn">
-            Post a Property
+          <p>No listings available yet.</p>
+
+          <Link href="/listings" className="featured__empty-btn">
+            Browse Listings
           </Link>
         </div>
       ) : (
@@ -60,6 +65,7 @@ export default function FeaturedListings() {
               <ListingCard key={listing.id} listing={listing} />
             ))}
           </div>
+
           <div className="featured__footer">
             <Link href="/listings" className="featured__view-all">
               View All Listings →

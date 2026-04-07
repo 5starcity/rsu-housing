@@ -1,6 +1,11 @@
+// components/listings/FilterBar.jsx
 "use client";
 
+import { UST_GATE_AREAS, OTHER_PH_AREAS, LOCATIONS } from "@/lib/locations";
 import "@/styles/filter-bar.css";
+
+const ustAreas = LOCATIONS.filter((l) => UST_GATE_AREAS.includes(l.value));
+const otherAreas = LOCATIONS.filter((l) => OTHER_PH_AREAS.includes(l.value));
 
 export default function FilterBar({
   search,
@@ -25,12 +30,21 @@ export default function FilterBar({
     setAvailability("All");
   }
 
+  const hasActiveFilters =
+    search !== "" ||
+    location !== "All" ||
+    type !== "All" ||
+    price !== "All" ||
+    verified ||
+    availability !== "All";
+
   return (
     <div className="filter-bar">
+      {/* Search */}
       <div className="filter-bar__search-wrap">
         <input
           type="text"
-          placeholder="Search by title or location..."
+          placeholder="Search by title or area..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="filter-bar__input"
@@ -40,36 +54,30 @@ export default function FilterBar({
         )}
       </div>
 
+      {/* Location — grouped by UST gate areas first */}
       <select
         value={location}
         onChange={(e) => setLocation(e.target.value)}
         className="filter-bar__select"
       >
-        <option value="All">All Locations</option>
-        <optgroup label="Near RSU">
-          <option value="Alakahia">Alakahia</option>
-          <option value="Choba">Choba</option>
-          <option value="Rumuosi">Rumuosi</option>
-          <option value="Nkpolu">Nkpolu</option>
-          <option value="Rumuola">Rumuola</option>
-          <option value="Eligbam">Eligbam</option>
+        <option value="All">All Areas</option>
+        <optgroup label="Near UST">
+          {ustAreas.map((loc) => (
+            <option key={loc.value} value={loc.value}>
+              {loc.label}
+            </option>
+          ))}
         </optgroup>
         <optgroup label="Port Harcourt">
-          <option value="Woji">Woji</option>
-          <option value="Rumuokoro">Rumuokoro</option>
-          <option value="Rumuigbo">Rumuigbo</option>
-          <option value="Trans Amadi">Trans Amadi</option>
-          <option value="GRA">GRA</option>
-          <option value="D-Line">D-Line</option>
-          <option value="Mile 1">Mile 1</option>
-          <option value="Mile 3">Mile 3</option>
-          <option value="Eliozu">Eliozu</option>
-          <option value="Rumuodara">Rumuodara</option>
-          <option value="Rumola">Rumola</option>
-          <option value="Ozuoba">Ozuoba</option>
+          {otherAreas.map((loc) => (
+            <option key={loc.value} value={loc.value}>
+              {loc.label}
+            </option>
+          ))}
         </optgroup>
       </select>
 
+      {/* Property Type */}
       <select
         value={type}
         onChange={(e) => setType(e.target.value)}
@@ -79,12 +87,14 @@ export default function FilterBar({
         <option value="Self Contain">Self Contain</option>
         <option value="Single Room">Single Room</option>
         <option value="Mini Flat">Mini Flat</option>
+        <option value="1 Bedroom Flat">1 Bedroom Flat</option>
         <option value="2 Bedroom Flat">2 Bedroom Flat</option>
         <option value="3 Bedroom Flat">3 Bedroom Flat</option>
         <option value="Shared Room">Shared Room</option>
         <option value="Studio Apartment">Studio Apartment</option>
       </select>
 
+      {/* Price */}
       <select
         value={price}
         onChange={(e) => setPrice(e.target.value)}
@@ -97,8 +107,10 @@ export default function FilterBar({
         <option value="500000">Up to ₦500,000</option>
         <option value="700000">Up to ₦700,000</option>
         <option value="1000000">Up to ₦1,000,000</option>
+        <option value="2000000">Up to ₦2,000,000</option>
       </select>
 
+      {/* Availability */}
       <select
         value={availability}
         onChange={(e) => setAvailability(e.target.value)}
@@ -110,6 +122,7 @@ export default function FilterBar({
         <option value="Not Available">Not Available</option>
       </select>
 
+      {/* Bottom row — verified + reset */}
       <div className="filter-bar__bottom">
         <label className="filter-bar__verified">
           <input
@@ -120,9 +133,11 @@ export default function FilterBar({
           <span>Verified only</span>
         </label>
 
-        <button className="filter-bar__reset" onClick={handleReset}>
-          Reset Filters
-        </button>
+        {hasActiveFilters && (
+          <button className="filter-bar__reset" onClick={handleReset}>
+            Reset Filters
+          </button>
+        )}
       </div>
     </div>
   );

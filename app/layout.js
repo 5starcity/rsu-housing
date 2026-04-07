@@ -6,7 +6,7 @@ import "./global.css";
 
 export const metadata = {
   title: "Dwella",
-  description: "Find verified student housing across Nigeria — no agents, no stress",
+  description: "Find verified housing across Nigeria — no agents, no stress",
 };
 
 export default function RootLayout({ children }) {

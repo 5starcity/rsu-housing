@@ -1,3 +1,4 @@
+// app/listings/page.js
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -5,15 +6,12 @@ import { motion } from "framer-motion";
 import ListingCard from "@/components/listings/ListingCard";
 import FilterBar from "@/components/listings/FilterBar";
 import { fetchListings } from "@/lib/firestoreListings";
+import { LOCATION_FILTER_OPTIONS } from "@/lib/locations";
 import "@/styles/listings-page.css";
 
 const containerVariants = {
   hidden: {},
-  show: {
-    transition: {
-      staggerChildren: 0.08,
-    },
-  },
+  show: { transition: { staggerChildren: 0.08 } },
 };
 
 const itemVariants = {
@@ -87,6 +85,15 @@ export default function ListingsPage() {
     availability !== "All",
   ].filter(Boolean).length;
 
+  function handleClearFilters() {
+    setSearch("");
+    setLocation("All");
+    setType("All");
+    setPrice("All");
+    setVerified(false);
+    setAvailability("All");
+  }
+
   return (
     <main className="listings-page">
       <motion.div
@@ -118,6 +125,7 @@ export default function ListingsPage() {
           setVerified={setVerified}
           availability={availability}
           setAvailability={setAvailability}
+          locationOptions={LOCATION_FILTER_OPTIONS}
         />
       </motion.div>
 
@@ -125,14 +133,21 @@ export default function ListingsPage() {
         {loading ? (
           <p>Loading listings...</p>
         ) : (
-          <p>
-            {filteredListings.length} listing{filteredListings.length !== 1 ? "s" : ""} found
+          <div className="listings-page__results-row">
+            <p>
+              {filteredListings.length} listing{filteredListings.length !== 1 ? "s" : ""} found
+              {activeFilterCount > 0 && (
+                <span className="listings-page__filter-count">
+                  · {activeFilterCount} filter{activeFilterCount !== 1 ? "s" : ""} active
+                </span>
+              )}
+            </p>
             {activeFilterCount > 0 && (
-              <span className="listings-page__filter-count">
-                · {activeFilterCount} filter{activeFilterCount !== 1 ? "s" : ""} active
-              </span>
+              <button className="listings-page__clear-btn" onClick={handleClearFilters}>
+                Clear all
+              </button>
             )}
-          </p>
+          </div>
         )}
       </div>
 
@@ -160,6 +175,11 @@ export default function ListingsPage() {
           <div className="listings-page__empty">
             <h3>No listings found</h3>
             <p>Try adjusting your filters or search terms.</p>
+            {activeFilterCount > 0 && (
+              <button className="listings-page__clear-btn" onClick={handleClearFilters}>
+                Clear filters
+              </button>
+            )}
           </div>
         </div>
       )}
